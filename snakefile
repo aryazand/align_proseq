@@ -6,7 +6,6 @@ import os
 import peppy
 import pandas as pd
 
-configfile: "config.yml"
 containerized: "container.sif"
 
 #############################
