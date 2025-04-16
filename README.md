@@ -40,3 +40,4 @@ apptainer build container.sif container.def
 1. Make UMI extraction optional
 2. Allow for both PE and SE reads
 3. Make it so that files don't have to be manually named
+4. Create a config file for settings
