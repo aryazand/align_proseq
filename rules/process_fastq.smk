@@ -44,7 +44,7 @@ rule extract_umi:
     output:
         r1=os.path.join(TRIMMED_DIR, "{sample}_1_trimmed_umi.fastq.gz"),
         r2=os.path.join(TRIMMED_DIR, "{sample}_2_trimmed_umi.fastq.gz"),
-        report = os.path.join(UMI_EXTRACT_DIR, "{sample}_umi_report.txt")
+        report = os.path.join(QC_DIR_UMIEXTRACT, "{sample}_umi_report.txt")
     log:
         err = "log/extract_umi_{sample}.err"
     conda: 
