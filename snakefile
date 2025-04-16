@@ -41,9 +41,6 @@ project = peppy.Project("data/sample_metadata/PEP.yaml")
 # Get sample metadata
 sample_table = project.sample_table
 
-# Only keep samples with flavo
-sample_table = sample_table[sample_table['sample_name'].str.contains('flavo')]
-
 # Create a genomes key
 dict_list = []
 for i in range(len(sample_table)):
