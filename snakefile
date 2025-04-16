@@ -3,50 +3,66 @@
 #########################
 
 import os
+import peppy
 import pandas as pd
-import pathlib
-from snakemake.utils import Paramspace
 
 configfile: "config.yml"
 containerized: "container.sif"
 
-include: "rules/common.smk"
+#############################
+# Define directories
+#############################
 
-#########################
-# Define global variables
-#########################
+DATA_DIR = "data"
+RAWFASTQ_DIR = os.path.join(DATA_DIR, "fastq")
+GENOMES_DIR = os.path.join(DATA_DIR, "genomes")
+RESULTS_DIR = "results"
+TRIMMED_DIR = os.path.join(RESULTS_DIR, "trimmed")
+DEDUPPED_DIR = os.path.join(RESULTS_DIR, "dedupped")
+ALIGNMENT_DIR = os.path.join(RESULTS_DIR, "alignments")
+LOGS_DIR = os.path.join(RESULTS_DIR, "logs")
 
-samples = Paramspace(pd.read_csv("sample_metadata.csv"))
-sample_names = set(samples.sample_name)
-sample_ext = get_fastq_extention(samples)
+QC_DIR = os.path.join(RESULTS_DIR, "qc")
+FASTQC_RAW_DIR = os.path.join(QC_DIR, "fastqc_raw")
+FASTQC_PROCESSED_DIR = os.path.join(QC_DIR, "fastqc_processed")
+QC_DIR_TRIMMING = os.path.join(QC_DIR, "trimming_reports")
+QC_DIR_ALIGNMENT = os.path.join(QC_DIR, "alignment_reports")
+QC_DIR_DEDUP = os.path.join(QC_DIR, "dedup")
+QC_DIR_UMIEXTRACT = os.path.join(QC_DIR, "umi_extraction")
+MULTIQC_DIR = os.path.join(QC_DIR, "multiqc")
 
-SPECIES = list(config["genomes"].keys())
-SPIKEIN_SPECIES = list(config['spikein'].keys())
-GENOMES = {}
-ACCESSION = {}
+#############################
+# Load samples and metadata
+#############################
 
-for specie in SPECIES:
-    GENOMES[specie] = config["genomes"][specie]["genome_name"]
-    ACCESSION[specie] = config["genomes"][specie]["accession"]
+# Load project PEP
+project = peppy.Project("data/sample_metadata/PEP.yaml")
 
-for specie in SPIKEIN_SPECIES:
-    GENOMES[specie] = config["spikein"][specie]["genome_name"] 
-    ACCESSION[specie] = config["spikein"][specie]["accession"] 
+# Get sample metadata
+sample_table = project.sample_table
 
-BIGWIGS_FOR_USCSC = []
-USCSC_HUB = []
+# Only keep samples with flavo
+sample_table = sample_table[sample_table['sample_name'].str.contains('flavo')]
 
-for species in SPECIES:
-    for sample in sample_names:
-        for direction in ['for', 'rev']:
-            genome = config["genomes"][species]["genome_name"]
-            bw = f"results/UCSCGenomeBrowser/{species}/{genome}/bw/{sample}_{species}_{direction}.bw"
-            BIGWIGS_FOR_USCSC.append(bw)
+# Create a genomes key
+dict_list = []
+for i in range(len(sample_table)):
+    genome_names = sample_table['genome_names'].iloc[i].split(", ")
+    genome_accessions = sample_table['genome_accessions'].iloc[i].split(", ")
+    dict_list.append(dict(zip(genome_names, genome_accessions)))
 
-for species in SPECIES:
-        genome = config["genomes"][species]["genome_name"]
-        hub = f"results/UCSCGenomeBrowser/{species}/{genome}/trackDb.txt"
-        USCSC_HUB.append(hub)
+for i in range(len(dict_list)-1):
+    dict_list[i].update(dict_list[i+1])
+
+GENOMES = dict_list[0]
+
+#############################
+# Create target files 
+#############################
+
+# Uses snakemake expand and zips the sample names with the genome names
+# to create a list of bam files
+all_genomes_bam = expand(os.path.join(ALIGNMENT_DIR,"{sample}_allgenomes.bam"), sample = sample_table['sample_name'])
 
 ######################
 # Define output files
@@ -54,37 +70,26 @@ for species in SPECIES:
 
 rule all:
     input:
-        expand("results/aligned_reads/{sample}_{genome}.bam.bai", 
-            sample = sample_names, 
-            genome = ['allgenomes_sorted', 'cmv_extract', 'human_extract']),
-        expand("results/aligned_reads/{sample}_{genome}_extract.bam", 
-            sample = sample_names, 
-            genome = SPECIES + SPIKEIN_SPECIES),
-        expand("results/bed/{sample}_{genome}.bed", 
-            sample = sample_names, 
-            genome = SPECIES),
-        expand("results/tracks/{sample}_{genome}_{direction}.{track_type}", 
-            sample = sample_names, 
-            genome = SPECIES, 
-            direction = ['for', 'rev'], 
-            track_type = config['create_track']['track_type']),
-        expand("results/tracks/{sample}_{genome}_{direction}.fiveprime.bw", 
-            sample = sample_names, 
-            genome = SPECIES, 
-            direction = ['for', 'rev']),
-        "results/QC/multiqc/multiqc_report.html",
-        BIGWIGS_FOR_USCSC,
-        expand("results/UCSCGenomeBrowser/{species}/genomes.txt", 
-            species = SPECIES),
-        expand("results/UCSCGenomeBrowser/{species}/hub.txt", 
-            species = SPECIES),
-        USCSC_HUB
+        expand(os.path.join(ALIGNMENT_DIR,"{sample}_allgenomes.dedup.bam"), sample = sample_table['sample_name']),
+        expand(os.path.join(ALIGNMENT_DIR,"{sample}_allgenomes.dedup.bam.bai"), sample = sample_table['sample_name']),
+        expand(os.path.join(ALIGNMENT_DIR,"{sample}_{genome}.bam"), sample = sample_table['sample_name'], genome = GENOMES.keys()),
+        expand(os.path.join(ALIGNMENT_DIR,"{sample}_{genome}.bam.bai"), sample = sample_table['sample_name'], genome = GENOMES.keys())
+
+rule multiqc:
+    output:
+        os.path.join(QC_DIR, "multiqc/multiqc_report.html")
+    conda:
+        "../envs/proseq-qc.yml"
+    log:
+        out = "log/multiqc.out",
+        err = "log/multiqc.err"
+    params:
+        QC_DIR = QC_DIR
+    shell:
+        "multiqc {params.QC_DIR} --outdir ($dirname {output}) --force"
 
 include: "rules/get_fastq.smk"
 include: "rules/process_fastq.smk"
 include: "rules/quality_control.smk"
 include: "rules/align_reads.smk"
-include: "rules/create_bed.smk"
-include: "rules/create_track.smk"
-include: "rules/create_ucsc_hub.smk"
 include: "rules/get_genomic_data.smk"
