@@ -1,46 +1,39 @@
-rule download_sra:
-    output: 
-        "data/fastq/{sra}/{sra}.sra"
-    conda:
-        "../envs/get-fastq.yml"
-    log:
-        out = "log/download_sra_{sra}.out",
-        err = "log/download_sra_{sra}.err"
-    shell: 
-        """
-        prefetch {wildcards.sra} -O data/fastq 2> {log.err} 1> {log.out}
-        """
-
 rule sra_to_fastq:
     # each sra is converted to 3 files based on paired-end reads: *_1.fastq [pair 1], *_2.fastq [pair 2], and *.fastq [reads without pairs]
-    # subsample the fastq_sample option in config file is not empty
-    input:
-        "data/fastq/{sra}/{sra}.sra"
     output:
-        f1 = temp("data/fastq/{sra}_1.fastq"),
-        f2 = temp("data/fastq/{sra}_2.fastq")
+        f1 = temp("data/fastq/{sample}_1.fastq"),
+        f2 = temp("data/fastq/{sample}_2.fastq")
     conda:
-        "../envs/get-fastq.yml"
+        "../envs/sra-to-fastq.yml"
     threads: 10
     log:
-        out = "log/sra_to_fastq_{sra}.out",
-        err = "log/sra_to_fastq_{sra}.err"
+        out = "log/sra_to_fastq_{sample}.out",
+        err = "log/sra_to_fastq_{sample}.err"
     params:
-        fastq_sample = config['fastq_sample'],
-        seed = 100
+        srr=lambda wildcards: sample_table[sample_table.sample_name == wildcards.sample]["srr"].iloc[0]
+    threads: 10
     shell:
         """
-        fasterq-dump -O data/fastq {input} 
+        # create folder if it does not exist
+        mkdir -p data/fastq
 
-        re='^[0-9]+([.][0-9]+)?$'
-        if [[ {params.fastq_sample} =~ $re ]]
-        then
-            echo "subsample {params.fastq_sample} reads from fastq"
-            seqtk sample -s{params.seed} {output.f1} {params.fastq_sample} > {output.f1}.TMP
-            mv {output.f1}.TMP {output.f1}
-            seqtk sample -s{params.seed} {output.f2} {params.fastq_sample} > {output.f2}.TMP
-            mv {output.f2}.TMP {output.f2}
-        else
-            echo "no subsampling of fastq"
-        fi
+        # download SRA data 
+        fasterq-dump --split-files -O data/fastq {params.srr} --threads {threads}
+
+        # rename
+        mv data/fastq/{params.srr}_1.fastq {output.f1}
+        mv data/fastq/{params.srr}_2.fastq {output.f2}
+        """
+
+rule gzip_fastq:
+    input: 
+        f1 = "data/fastq/{sample}_1.fastq",
+        f2 = "data/fastq/{sample}_2.fastq"
+    output:
+        f1 = "data/fastq/{sample}_1.fastq.gz",
+        f2 = "data/fastq/{sample}_2.fastq.gz"
+    shell:
+        """
+        gzip {input.f1}
+        gzip {input.f2}
         """
