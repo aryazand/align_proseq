@@ -34,31 +34,23 @@ MULTIQC_DIR = os.path.join(QC_DIR, "multiqc")
 # Load samples and metadata
 #############################
 
-# Load project PEP
-project = peppy.Project("data/sample_metadata/PEP.yaml")
+# # Load project PEP
+# project = peppy.Project("data/sample_metadata/PEP.yaml")
 
-# Get sample metadata
-sample_table = project.sample_table
+# # Get sample metadata
+# sample_table = project.sample_table
 
-# Create a genomes key
-dict_list = []
-for i in range(len(sample_table)):
-    genome_names = sample_table['genome_names'].iloc[i].split(", ")
-    genome_accessions = sample_table['genome_accessions'].iloc[i].split(", ")
-    dict_list.append(dict(zip(genome_names, genome_accessions)))
+# # Create a genomes key
+# dict_list = []
+# for i in range(len(sample_table)):
+#     genome_names = sample_table['genome_names'].iloc[i].split(", ")
+#     genome_accessions = sample_table['genome_accessions'].iloc[i].split(", ")
+#     dict_list.append(dict(zip(genome_names, genome_accessions)))
 
-for i in range(len(dict_list)-1):
-    dict_list[i].update(dict_list[i+1])
+# for i in range(len(dict_list)-1):
+#     dict_list[i].update(dict_list[i+1])
 
-GENOMES = dict_list[0]
-
-#############################
-# Create target files 
-#############################
-
-# Uses snakemake expand and zips the sample names with the genome names
-# to create a list of bam files
-all_genomes_bam = expand(os.path.join(ALIGNMENT_DIR,"{sample}_allgenomes.bam"), sample = sample_table['sample_name'])
+# GENOMES = dict_list[0]
 
 ######################
 # Define output files
