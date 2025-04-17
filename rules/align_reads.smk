@@ -8,10 +8,11 @@ rule create_bowtie2_index:
     log:
         out = "log/create_bowtie2_index_{combined_species_names}.out",
         err = "log/create_bowtie2_index_{combined_species_names}.err"
-    threads: 10
+    params:
+        threads = config["bowtie2_build"]["threads"]
     shell:
         """
-        bowtie2-build --threads {threads} {input} $(dirname {input}) 2> {log.err} 1> {log.out}
+        bowtie2-build --threads {param.threads} {input} $(dirname {input}) 2> {log.err} 1> {log.out}
         """
 
 rule align_reads:
@@ -27,16 +28,18 @@ rule align_reads:
         out = "log/align_reads_{sample}.out",
     conda:
         "../envs/bowtie2.yml"
-    threads: 15
     params:
-        BOWTIE_INDEX = lambda wildcards: os.path.join("data/genome/", "_".join(sample_table[sample_table['sample_name'] == wildcards.sample]['genome_names'].iloc[0].split(', '))),
-        PAIRED = "--fr --no-discordant",
-        ADDITIONAL = ""
+        bowtie_index = lambda wildcards: os.path.join("data/genome/", "_".join(sample_table[sample_table['sample_name'] == wildcards.sample]['genome_names'].iloc[0].split(', '))),
+        umi_size = config["bowtie2"]["umi_size"],
+        paired = config["bowtie2"]["paired_params"],
+        additional = config["bowtie2"]["additional_params"],
+        threads = config["bowtie2"]["threads"]
     shell:
         """
-        bowtie2 -x {params.BOWTIE_INDEX} \
-            --threads {threads} \
-            {params.PAIRED} {params.ADDITIONAL} \
+        bowtie2 -x {params.bowtie_index} \
+            --threads {params.threads} \
+            --trim5 {params.umi_size} --trim3 {params.umi_size} \
+            {params.paired} {params.additional} \
             --met-file {output.metrics} \
             -1 {input.f1} -2 {input.f2} \
             -S {output.sam} 2> {output.stats} 1> {log.out}
@@ -49,7 +52,7 @@ rule sam_to_bam:
         temp(os.path.join(ALIGNMENT_DIR, "{sample}_allgenomes.bam"))
     conda:
         "../envs/samtools.yml"
-    threads: 10
+    threads: config["samtools"]["threads"]
     log:
         out = "log/sam_to_bam.{sample}.out",
         err = "log/sam_to_bam.{sample}.err"
@@ -63,7 +66,7 @@ rule index_bam:
         os.path.join(ALIGNMENT_DIR, "{sample}_{genome}.bam.bai")
     conda:
         "../envs/samtools.yml"
-    threads: 10
+    threads: config["samtools"]["threads"]
     log:
         out = "log/index_bam.{sample}_{genome}.out",
         err = "log/index_bam.{sample}_{genome}.err"
@@ -99,7 +102,7 @@ rule extract_genome_bam:
         os.path.join(ALIGNMENT_DIR, "{sample}_{species}.bam")
     conda:
         "../envs/samtools.yml"
-    threads: 10
+    threads: config["samtools"]["threads"]
     log:
         out = "log/extract_{species}_bam.{sample}.out",
         err = "log/extract_{species}_bam.{sample}.err"

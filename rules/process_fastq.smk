@@ -11,10 +11,13 @@ rule trim_reads_pe:
         report_r2=os.path.join(QC_DIR_TRIMMING, "{sample}_2_trimming_report.txt")
     conda:
         "../envs/trim-galore.yml"
-    threads: 5
     log:
         out = "log/trim_reads_{sample}.out",
         err = "log/trim_reads_{sample}.err"
+    params:
+        cores = config["trim_galore"]["threads"],
+        adaptor = config["trim_galore"]["adaptor"],
+        stringency = config["trim_galore"]["stringency"]
     shell:
 	    """
         # make directory if it does not exist
@@ -22,8 +25,8 @@ rule trim_reads_pe:
         mkdir -p $(dirname {output.report_r1})
 
         # run trim galore
-        trim_galore --paired --cores {threads} --gzip \
-            --small_rna --stringency 3 \
+        trim_galore --paired --cores {params.cores} --gzip \
+            {params.adaptor} --stringency {params.stringency} \
             --output_dir $(dirname {output.r1}) \
             {input.r1} {input.r2} \
             2> {log.err} 1> {log.out}
@@ -49,7 +52,11 @@ rule extract_umi:
         err = "log/extract_umi_{sample}.err"
     conda: 
         "../envs/umitools.yml"
+    params: 
+        bc_pattern = config["umi_tools"]["bc_pattern"]
     shell:
         """
-        umi_tools extract -I {input.r1} --bc-pattern=NNNNNNNN --read2-in={input.r2} --stdout={output.r1} --read2-out={output.r2} 2> {log.err} 1> {output.report}
+        umi_tools extract -I {input.r1} --bc-pattern={params.bc_pattern} \
+        --read2-in={input.r2} --stdout={output.r1} --read2-out={output.r2} \
+        2> {log.err} 1> {output.report}
         """

@@ -7,15 +7,17 @@ import peppy
 import pandas as pd
 
 containerized: "container.sif"
+configfile: "config.yml"
 
 #############################
 # Define directories
 #############################
 
-DATA_DIR = "data"
+DATA_DIR = config["data_dir"]
 RAWFASTQ_DIR = os.path.join(DATA_DIR, "fastq")
 GENOMES_DIR = os.path.join(DATA_DIR, "genomes")
-RESULTS_DIR = "results"
+
+RESULTS_DIR = config["results_dir"]
 TRIMMED_DIR = os.path.join(RESULTS_DIR, "trimmed")
 DEDUPPED_DIR = os.path.join(RESULTS_DIR, "dedupped")
 ALIGNMENT_DIR = os.path.join(RESULTS_DIR, "alignments")
@@ -34,23 +36,39 @@ MULTIQC_DIR = os.path.join(QC_DIR, "multiqc")
 # Load samples and metadata
 #############################
 
-# # Load project PEP
-# project = peppy.Project("data/sample_metadata/PEP.yaml")
+# Load project PEP
+project = peppy.Project(config["pep_file"])
 
-# # Get sample metadata
-# sample_table = project.sample_table
+# Get sample metadata
+sample_table = project.sample_table
 
-# # Create a genomes key
-# dict_list = []
-# for i in range(len(sample_table)):
-#     genome_names = sample_table['genome_names'].iloc[i].split(", ")
-#     genome_accessions = sample_table['genome_accessions'].iloc[i].split(", ")
-#     dict_list.append(dict(zip(genome_names, genome_accessions)))
+# Get sample filters
+if "filters" in config:
+    if "sample_equals" in config["filters"]:
+        for attribute, values in config["filters"]["sample_equals"].items():
+            if attribute in sample_table.columns:
+                if isinstance(values, list):
+                    # Filter for samples with attribute value in the list
+                    sample_table = sample_table[sample_table[attribute].isin(values)]
+                else:
+                    # Filter for samples with attribute matching specific value
+                    sample_table = sample_table[sample_table[attribute] == values]
+    if "sample_contains" in config["filters"]:
+        for attribute, value in config["filters"]["sample_contains"].items():
+            if attribute in sample_table.columns:
+                sample_table = sample_table[sample_table[attribute].str.contains(value, regex=True)]
+            
+# Create a genomes key
+dict_list = []
+for i in range(len(sample_table)):
+    genome_names = sample_table['genome_names'].iloc[i].split(", ")
+    genome_accessions = sample_table['genome_accessions'].iloc[i].split(", ")
+    dict_list.append(dict(zip(genome_names, genome_accessions)))
 
-# for i in range(len(dict_list)-1):
-#     dict_list[i].update(dict_list[i+1])
+for i in range(len(dict_list)-1):
+    dict_list[i].update(dict_list[i+1])
 
-# GENOMES = dict_list[0]
+GENOMES = dict_list[0]
 
 ######################
 # Define output files
