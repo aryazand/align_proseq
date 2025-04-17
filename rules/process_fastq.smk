@@ -56,7 +56,8 @@ rule extract_umi:
         bc_pattern = config["umi_tools"]["bc_pattern"]
     shell:
         """
-        umi_tools extract -I {input.r1} --bc-pattern={params.bc_pattern} \
+        umi_tools extract -I {input.r1} \
+        --bc-pattern={params.bc_pattern} --bc-pattern2={params.bc_pattern} \
         --read2-in={input.r2} --stdout={output.r1} --read2-out={output.r2} \
         2> {log.err} 1> {output.report}
         """
