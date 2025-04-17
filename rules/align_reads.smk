@@ -12,7 +12,7 @@ rule create_bowtie2_index:
         threads = config["bowtie2_build"]["threads"]
     shell:
         """
-        bowtie2-build --threads {param.threads} {input} $(dirname {input}) 2> {log.err} 1> {log.out}
+        bowtie2-build --threads {params.threads} {input} $(dirname {input}) 2> {log.err} 1> {log.out}
         """
 
 rule align_reads:
