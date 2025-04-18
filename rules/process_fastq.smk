@@ -53,8 +53,8 @@ rule extract_umi:
     conda: 
         "../envs/umitools.yml"
     params: 
-        bc_pattern = config["umi_tools"]["bc_pattern"]
-        additional = config["umi_tools"]["additional"],
+        bc_pattern = config["umi_tools"]["bc_pattern"],
+        additional = config["umi_tools"]["additional"]
     shell:
         """
         umi_tools extract -I {input.r1} \
