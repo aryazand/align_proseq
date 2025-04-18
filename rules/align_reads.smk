@@ -38,7 +38,6 @@ rule align_reads:
         """
         bowtie2 -x {params.bowtie_index} \
             --threads {params.threads} \
-            --trim5 {params.umi_size} --trim3 {params.umi_size} \
             {params.paired} {params.additional} \
             --met-file {output.metrics} \
             -1 {input.f1} -2 {input.f2} \
