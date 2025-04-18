@@ -54,9 +54,11 @@ rule extract_umi:
         "../envs/umitools.yml"
     params: 
         bc_pattern = config["umi_tools"]["bc_pattern"]
+        additional = config["umi_tools"]["additional"],
     shell:
         """
         umi_tools extract -I {input.r1} \
+        {params.additional} \
         --bc-pattern={params.bc_pattern} --bc-pattern2={params.bc_pattern} \
         --read2-in={input.r2} --stdout={output.r1} --read2-out={output.r2} \
         2> {log.err} 1> {output.report}
