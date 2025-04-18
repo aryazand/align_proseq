@@ -5,8 +5,8 @@ rule trim_reads_pe:
         r1="data/fastq/{sample}_1.fastq.gz",
         r2="data/fastq/{sample}_2.fastq.gz"
     output:
-        r1=os.path.join(TRIMMED_DIR, "{sample}_1_trimmed.fastq.gz"),
-        r2=os.path.join(TRIMMED_DIR, "{sample}_2_trimmed.fastq.gz"),
+        r1=temp(os.path.join(TRIMMED_DIR, "{sample}_1_trimmed.fastq.gz")),
+        r2=temp(os.path.join(TRIMMED_DIR, "{sample}_2_trimmed.fastq.gz")),
         report_r1=os.path.join(QC_DIR_TRIMMING, "{sample}_1_trimming_report.txt"),
         report_r2=os.path.join(QC_DIR_TRIMMING, "{sample}_2_trimming_report.txt")
     conda:
