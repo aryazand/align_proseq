@@ -57,9 +57,9 @@ rule extract_umi:
         additional = config["umi_tools"]["additional"]
     shell:
         """
-        umi_tools extract -I {input.r1} \
-        {params.additional} \
+        umi_tools extract -I {input.r1} --read2-in={input.r2} \
         --bc-pattern={params.bc_pattern} --bc-pattern2={params.bc_pattern} \
-        --read2-in={input.r2} --stdout={output.r1} --read2-out={output.r2} \
+        {params.additional} \
+        --stdout={output.r1} --read2-out={output.r2} \
         2> {log.err} 1> {output.report}
         """
