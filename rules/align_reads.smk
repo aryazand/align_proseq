@@ -77,19 +77,19 @@ rule deduplicate_bam:
         os.path.join(ALIGNMENT_DIR, "{sample}_allgenomes.bam"),
         os.path.join(ALIGNMENT_DIR, "{sample}_allgenomes.bam.bai")
     output:
-        os.path.join(ALIGNMENT_DIR, "{sample}_allgenomes.dedup.bam")
+        bam = os.path.join(ALIGNMENT_DIR, "{sample}_allgenomes.dedup.bam"),
+        report = os.path.join(QC_DIR_DEDUP, "{sample}.out")
     conda:
         "../envs/umitools.yml"
     threads: 10
     log:
-        out = "log/deduplicate_bam.{sample}.out",
         err = "log/deduplicate_bam.{sample}.err"
     params:
-        QC_DIR = os.path.join(QC_DIR, "dedup")
+        QC_DIR = QC_DIR_DEDUP
     shell:
         """      
         mkdir -p {params.QC_DIR}  
-        umi_tools dedup -I {input} --output-stats={params.QC_DIR}/{wildcards.sample} --paired -S {output} 2> {log.err} 1> {log.out}
+        umi_tools dedup -I {input} --output-stats={params.QC_DIR}/{wildcards.sample} --paired -S {output.bam} 2> {log.err} 1> {output.report}
         """
     
 rule extract_genome_bam:

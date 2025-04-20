@@ -24,12 +24,11 @@ ALIGNMENT_DIR = os.path.join(RESULTS_DIR, "alignments")
 LOGS_DIR = os.path.join(RESULTS_DIR, "logs")
 
 QC_DIR = os.path.join(RESULTS_DIR, "qc")
-FASTQC_RAW_DIR = os.path.join(QC_DIR, "fastqc_raw")
-FASTQC_PROCESSED_DIR = os.path.join(QC_DIR, "fastqc_processed")
+QC_DIR_FASTQC = os.path.join(QC_DIR, "fastqc")
 QC_DIR_TRIMMING = os.path.join(QC_DIR, "trimming_reports")
+QC_DIR_UMIEXTRACT = os.path.join(QC_DIR, "umi_extraction")
 QC_DIR_ALIGNMENT = os.path.join(QC_DIR, "alignment_reports")
 QC_DIR_DEDUP = os.path.join(QC_DIR, "dedup")
-QC_DIR_UMIEXTRACT = os.path.join(QC_DIR, "umi_extraction")
 MULTIQC_DIR = os.path.join(QC_DIR, "multiqc")
 
 #############################
@@ -81,18 +80,7 @@ rule all:
         expand(os.path.join(ALIGNMENT_DIR,"{sample}_{genome}.bam"), sample = sample_table['sample_name'], genome = GENOMES.keys()),
         expand(os.path.join(ALIGNMENT_DIR,"{sample}_{genome}.bam.bai"), sample = sample_table['sample_name'], genome = GENOMES.keys())
 
-rule multiqc:
-    output:
-        os.path.join(QC_DIR, "multiqc/multiqc_report.html")
-    conda:
-        "../envs/proseq-qc.yml"
-    log:
-        out = "log/multiqc.out",
-        err = "log/multiqc.err"
-    params:
-        QC_DIR = QC_DIR
-    shell:
-        "multiqc {params.QC_DIR} --outdir ($dirname {output}) --force"
+
 
 include: "rules/get_fastq.smk"
 include: "rules/process_fastq.smk"
