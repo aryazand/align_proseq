@@ -17,7 +17,8 @@ rule trim_reads_pe:
     params:
         cores = config["trim_galore"]["threads"],
         adaptor = config["trim_galore"]["adaptor"],
-        stringency = config["trim_galore"]["stringency"]
+        stringency = config["trim_galore"]["stringency"],
+        additional = config["trim_galore"]["additional"]
     shell:
 	    """
         # make directory if it does not exist
@@ -27,6 +28,7 @@ rule trim_reads_pe:
         # run trim galore
         trim_galore --paired --cores {params.cores} --gzip \
             {params.adaptor} --stringency {params.stringency} \
+            {params.additional} \
             --output_dir $(dirname {output.r1}) \
             {input.r1} {input.r2} \
             2> {log.err} 1> {log.out}
@@ -53,8 +55,8 @@ rule extract_umi:
     conda: 
         "../envs/umitools.yml"
     params: 
-        bc_pattern = config["umi_tools"]["bc_pattern"],
-        additional = config["umi_tools"]["additional"]
+        bc_pattern = config["umi_tools_extract"]["bc_pattern"],
+        additional = config["umi_tools_extract"]["additional"]
     shell:
         """
         umi_tools extract -I {input.r1} --read2-in={input.r2} \
