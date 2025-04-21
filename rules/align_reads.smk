@@ -81,15 +81,15 @@ rule deduplicate_bam:
         report = os.path.join(QC_DIR_DEDUP, "{sample}.out")
     conda:
         "../envs/umitools.yml"
-    threads: 10
     log:
         err = "log/deduplicate_bam.{sample}.err"
     params:
-        QC_DIR = QC_DIR_DEDUP
+        QC_DIR = QC_DIR_DEDUP,
+        additional = config["umi_tools_dedup"]["additional"]
     shell:
         """      
         mkdir -p {params.QC_DIR}  
-        umi_tools dedup -I {input} --output-stats={params.QC_DIR}/{wildcards.sample} --paired -S {output.bam} 2> {log.err} 1> {output.report}
+        umi_tools dedup -I {input} --paired {params.additional} -S {output.bam} 2> {log.err} 1> {output.report}
         """
     
 rule extract_genome_bam:
