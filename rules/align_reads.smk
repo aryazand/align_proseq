@@ -48,7 +48,7 @@ rule sam_to_bam:
     input:
         os.path.join(ALIGNMENT_DIR,"{sample}.sam")
     output:
-        temp(os.path.join(ALIGNMENT_DIR, "{sample}_allgenomes.bam"))
+        os.path.join(ALIGNMENT_DIR, "{sample}_allgenomes.bam")
     conda:
         "../envs/samtools.yml"
     threads: config["samtools"]["threads"]
