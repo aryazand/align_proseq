@@ -19,7 +19,7 @@ rule align_reads:
     input:
         f1 = os.path.join(TRIMMED_DIR, "{sample}_1_trimmed_umi.fastq.gz"),
         f2 = os.path.join(TRIMMED_DIR, "{sample}_2_trimmed_umi.fastq.gz"),
-        bowtie_index = lambda wildcards: multiext(f"data/genome/{"_".join(sample_table[sample_table["sample_name"] == wildcards.sample]["genome_names"].iloc[0].split(", "))}", ".1.bt2", ".2.bt2", ".3.bt2", ".4.bt2", ".rev.1.bt2", ".rev.2.bt2")
+        bowtie_index = lambda wildcards: multiext(f"data/genome/{"-".join(sample_table[sample_table["sample_name"] == wildcards.sample]["genome_names"].iloc[0].split(", "))}", ".1.bt2", ".2.bt2", ".3.bt2", ".4.bt2", ".rev.1.bt2", ".rev.2.bt2")
     output:
         sam = temp(os.path.join(ALIGNMENT_DIR,"{sample}.sam")),
         metrics = os.path.join(QC_DIR_ALIGNMENT, "{sample}.txt"),
