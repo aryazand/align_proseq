@@ -15,7 +15,7 @@ configfile: "config.yml"
 
 DATA_DIR = config["data_dir"]
 RAWFASTQ_DIR = os.path.join(DATA_DIR, "fastq")
-GENOMES_DIR = os.path.join(DATA_DIR, "genomes")
+GENOMES_DIR = os.path.join(DATA_DIR, "genome")
 
 RESULTS_DIR = config["results_dir"]
 TRIMMED_DIR = os.path.join(RESULTS_DIR, "trimmed")
